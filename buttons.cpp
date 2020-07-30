@@ -3,6 +3,8 @@
 
 // #define DEBUG_MODE
 
+extern uint32_t count;
+
 typedef struct settings {
   const byte pin;
   const byte midi;
@@ -27,6 +29,8 @@ public:
   }
 
   virtual void loop() {
+    if (count % 64 != 16) // run once / 64 cycles
+      return;
     for (int i = 0; i < BUTTONS; i++) {
       byte s = !digitalRead(settings[i].pin);
       if (button_status[i] != s) {
@@ -54,4 +58,3 @@ private:
 };
 
 AbstractModule* buttons = new ButtonsModule();
-

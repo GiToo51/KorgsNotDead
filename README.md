@@ -4,6 +4,8 @@
 
 After trying to repair a Korg Concert C25 with no sound, I ended up using an Arduino Mega 2560 I had for fun to transform this keayboard into a Midi Controller.
 
+![Final](/ressources/extern.jpg)
+
 ![Opened](/ressources/opened.jpg)
 
 # Features
@@ -58,3 +60,9 @@ Arduino Mega have 36 pins, so there are 2 free wire on each side, 2 analogs and 
 I had to do few tricks to use all these pins on the Arduino: Cf into comments in the code.
 
 ![Wireing](/ressources/wirering.jpg)
+
+# Debugging
+
+Midi IO use Serial1 native serial port. In the final version, Serial0 on the usb port is not initialized, and the usb port is used only to power the card.
+
+You can start the code in debug mode on the file you want, and debugs messages are sent to the usb serial port Serial0.
