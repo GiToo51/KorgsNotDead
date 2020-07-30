@@ -4,6 +4,8 @@
 
 After trying to repair a Korg Concert C25 with no sound, I ended up using an Arduino Mega 2560 I had for fun to transform this keayboard into a Midi Controller.
 
+![Opened](/ressources/opened.jpg)
+
 # Features
 Because arduino is slow, velocity curve is precomputed and the scan runs as fast as possible. Cf: generateVelocityCurve.rb
 This runs somewhere around half a milissecond for a complete scan, that's fast enouth to have a great velocity precision.
@@ -12,11 +14,20 @@ This runs somewhere around half a milissecond for a complete scan, that's fast e
 88 Keys, mapped into 15x(6x2) matrix.
 So that means 15 half Octaves with 2 switch per key to measure velocity.
 
+First tried if that can work
+
+![Prototype](/ressources/prototype.jpg)
+
+Then debugging wirering order problems.
+
+![Debugging](/ressources/debug.jpg)
+
+
 ### Pedals
-2 simple switches.
+2 simple switches. 3 independent wire.
 
 ### Volume
-1 Analog volume
+1 Analog volume. Wired to the side of the IDE cable.
 
 ### Buttons and leds
 8 buttons: 6 for preset selection, and 2 (on the right) for internal transpose features.
@@ -39,10 +50,11 @@ As the mixer part is dead from the original card, but the power ampifier is stil
 
 # Midi sockets
 To keep clean sockets, I cut the midi part with sockets & few components, into the original card to isolate electricaly midi cables from the arduino card.
+Wired to hte IDE cable.
 
 # Internal wirering
 I don't like soldering 40wires, so I used an old IDE 40pins cable with a male male connecter, to wire everything.
+Arduino Mega have 36 pins, so there are 2 free wire on each side, 2 analogs and Serial 1 in and out for midi sockets.
+I had to do few tricks to use all these pins on the Arduino: Cf into comments in the code.
 
-![Prototype](/ressources/prototype.jpg)
 ![Wireing](/ressources/wirering.jpg)
-![Opened](/ressources/opened.jpg)
