@@ -4,6 +4,7 @@
 // #define DEBUG_MODE
 
 extern uint32_t count;
+extern byte channel;
 
 typedef struct settings {
   const byte pin;
@@ -29,8 +30,9 @@ public:
   }
 
   virtual void loop() {
-    if (count % 64 != 16) // run once / 64 cycles
+    if (count % 64 != 32) // run once / 64 cycles in alternance with analogs
       return;
+
     for (int i = 0; i < BUTTONS; i++) {
       byte s = !digitalRead(settings[i].pin);
       if (button_status[i] != s) {
@@ -45,7 +47,7 @@ private:
   void buttonChanged(const byte i, const byte s) {
     const settings_t &set = settings[i];
     button_status[i] = s;
-    MIDI.sendControlChange(set.midi, (button_status[i] ? 127 : 0), 1);
+    MIDI.sendControlChange(set.midi, (button_status[i] ? 127 : 0), channel);
 #ifdef DEBUG_MODE
     Serial.print(set.name);
     Serial.print(": ");

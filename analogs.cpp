@@ -4,6 +4,7 @@
 //#define DEBUG_MODE
 
 extern uint32_t count;
+extern byte channel;
 
 // Analogs: Vol / X / Y
 #define ANALOGS 1 //3
@@ -26,6 +27,7 @@ public:
   virtual void loop() {
     if (count % 64 != 0) // run once / 64 cycles
       return;
+
     for (int i = 0; i < ANALOGS; i++) {
       uint16_t a = analogRead(analog_pins[i]);
       if (abs(analogs_source[i] - a) > ANALOG_HYSTERESIS) { // protect to send too much messages
@@ -41,7 +43,7 @@ public:
           Serial.print(" Val: ");
           Serial.println(v);
 #endif
-          MIDI.sendControlChange(analog_midi[i], v, 1);
+          MIDI.sendControlChange(analog_midi[i], v, channel);
         }
       }
     }

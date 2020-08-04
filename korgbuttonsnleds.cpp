@@ -6,6 +6,12 @@
 extern uint32_t count;
 extern  int16_t keyboardTranspose;
 extern void (*catchNextNoteCallback)(const byte note);
+extern byte channel;
+//  1  5  9 : PIANO first button
+//  2  6 10 : E.PIANO
+//  3  7 11 : HARPSI
+//  4  8 12 : VIBES
+// 13 14 15 : ORGAN
 
 void catchTransposeFromFunct(const byte note);
 void catchTransposeToFunct(const byte note);
@@ -39,6 +45,14 @@ const byte ledlevels[] = {
   B11111111,
 };
 
+const byte ledchannels[] = {
+  0,
+  1,2,3,4,
+  1,2,3,4,
+  1,2,3,4,
+  5,5,5,0
+};
+
 class KorgbuttonsnledsModule : public AbstractModule {
 public:
   virtual void setup() {
@@ -52,13 +66,20 @@ public:
   }
 
   virtual void loop() {
+    if (count % 128 != 16) // run once / 128 cycles
+      return;
+
     if (korgButtons != 0 && ! buttonComboReleasing) {
       for (byte i = 0; i < 8; i++) {
         korgLeds[i] = (korgButtons & (1<<i)) ? ledlevels[7] : ledlevels[0];
       }
     } else {
+      // off
+      for (byte i = 0; i < 8; i++)
+        korgLeds[i] = ledlevels[0];
+
       // K2000 background
-      byte pos = count / 128;
+/*      byte pos = count / 128;
       if (pos & 1<<3)
         pos = pos % 8;
       else
@@ -74,6 +95,9 @@ public:
         else
           korgLeds[i] = ledlevels[0];
       }
+*/
+
+      korgLeds[ledchannels[channel]] = ledlevels[7];
 
       if (catchNextNoteCallback) {
         korgLeds[7] = count & 512 ? ledlevels[7] : ledlevels[0];
@@ -97,9 +121,6 @@ public:
     digitalWrite(LEDS_N_BUTTONS_LATCH, LOW);
     delayMicroseconds(DEBOUNCE);
     shiftOut(LEDS_DATA, LEDS_SHIFT, MSBFIRST, leds);
-
-    if (count % 64 != 32) // run once / 64 cycles
-      return;
 
     // tell the buttons to load the data during the same time
     shiftIn(BUTTONS_DATA, BUTTONS_SHIFT, MSBFIRST);
@@ -145,11 +166,54 @@ private:
     } else if (b & B01000000) { // transpose -
       keyboardTranspose -= 2;
     } else {
-      MIDI.sendProgramChange(b, 1);
+      //MIDI.sendProgramChange(b, channel);
+      switch (b) {
+        case B00000010:
+          switch (channel) {
+            case  1: channel =  5; break;
+            case  5: channel =  9; break;
+            default: channel =  1; break;
+          }
+          break;
+        case B00000100:
+          switch (channel) {
+            case  2: channel =  6; break;
+            case  6: channel = 10; break;
+            default: channel =  2; break;
+          }
+          break;
+        case B00001000:
+          switch (channel) {
+            case  3: channel =  7; break;
+            case  7: channel = 11; break;
+            default: channel =  3; break;
+          }
+          break;
+        case B00010000:
+          switch (channel) {
+            case  4: channel =  8; break;
+            case  8: channel = 12; break;
+            default: channel =  4; break;
+          }
+          break;
+        case B00100000:
+          switch (channel) {
+            case  13: channel = 14; break;
+            case  14: channel = 15; break;
+            default:  channel = 13; break;
+          }
+          break;
+       default:
+         channel = 16;
+      }
     }
 #ifdef DEBUG_MODE
       Serial.print("Buttons: ");
-      Serial.println(b, HEX);
+      Serial.print(b, HEX);
+      Serial.print(" Channel: ");
+      Serial.print(channel, DEC);
+      Serial.print(" Transpose: ");
+      Serial.println(keyboardTranspose, DEC);
 #endif
   }
 };
