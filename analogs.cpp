@@ -3,9 +3,6 @@
 
 //#define DEBUG_MODE
 
-extern uint32_t count;
-extern byte channel;
-
 // Analogs: Vol / X / Y
 #define ANALOGS 1 //3
 #define ANALOG_HYSTERESIS 3
@@ -43,7 +40,7 @@ public:
           Serial.print(" Val: ");
           Serial.println(v);
 #endif
-          MIDI.sendControlChange(analog_midi[i], v, channel);
+          MIDI1.sendControlChange(analog_midi[i], v, channel);
         }
       }
     }

@@ -1,11 +1,10 @@
 
-#include <MIDI.h>
 #include "module.h"
 
 // #define DEBUG_MODE
 // #define DEBUG_SPEED
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI1);
 
 uint32_t count;
 uint32_t running;
@@ -20,7 +19,7 @@ void setup() {
   running = false;
   count = 0;
   channel = 16;
-  MIDI.begin(16);
+  MIDI1.begin(16);
 
   // setup
   keyboard->setup();

@@ -3,9 +3,6 @@
 
 // #define DEBUG_MODE
 
-extern uint32_t count;
-extern byte channel;
-
 typedef struct settings {
   const byte pin;
   const byte midi;
@@ -47,7 +44,7 @@ private:
   void buttonChanged(const byte i, const byte s) {
     const settings_t &set = settings[i];
     button_status[i] = s;
-    MIDI.sendControlChange(set.midi, (button_status[i] ? 127 : 0), channel);
+    MIDI1.sendControlChange(set.midi, (button_status[i] ? 127 : 0), channel);
 #ifdef DEBUG_MODE
     Serial.print(set.name);
     Serial.print(": ");

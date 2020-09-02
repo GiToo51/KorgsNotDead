@@ -3,10 +3,6 @@
 
 //#define DEBUG_MODE
 
-extern uint32_t count;
-extern  int16_t keyboardTranspose;
-extern void (*catchNextNoteCallback)(const byte note);
-extern byte channel;
 //  1  5  9 : PIANO first button
 //  2  6 10 : E.PIANO
 //  3  7 11 : HARPSI

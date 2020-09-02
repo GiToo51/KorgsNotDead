@@ -1,6 +1,12 @@
 
 #include <MIDI.h>
-extern midi::MidiInterface<HardwareSerial> MIDI;
+
+// global declarations from 
+extern midi::MidiInterface<HardwareSerial> MIDI1;
+extern uint32_t count;
+extern byte channel;
+extern int16_t keyboardTranspose;
+extern void (*catchNextNoteCallback)(const byte note);
 
 #define DEBOUNCE 16 // usec
 // Korg 88keys default
