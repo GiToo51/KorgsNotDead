@@ -24,28 +24,17 @@ Then debugging wirering order problems.
 
 ![Debugging](/ressources/debug.jpg)
 
+Then, so many optimisations occurs befors this very efficient final version.
+
+### LEDS
+TODO...
+
+### Menu
+TODO...
 
 ### Pedals
-2 simple switches. 3 independent wire.
-
-### Volume
-1 Analog volume. Wired to the side of the IDE cable.
-
-### Buttons and leds
-8 buttons: 6 for preset selection, and 2 (on the right) for internal transpose features.
-8 display levels on each led.
-Default K2000 snake in backgroud, for testing (and for fun).
-Buttons actions are trigered on release, to be able to acquire key combo.
-
-#### Transpose
-Left button: -1 tone
-Right button: +1 tone
-Both button: Learning mode: press the first key, then the second to transpose the first note to the second.
-2x Both button: reset to default transpose.
-
-#### Banks presets
-For now you can type binary combination to have more possibilities: 2^6.
-But should be changed soon.
+Internal: 2 simple switches. 3 independent wire.
+External: ExtA & ExtB, OnOff and Analog reading
 
 # Audio card
 As the mixer part is dead from the original card, but the power ampifier is still working and seems to be some great quality, I tried wirering the line output of the soudcard to the input of this card. After cleaning wirering to have noiseless sound, I figured out that I missed some bass. A friend is going to help me on this as I'M not an analog signal expert.
@@ -63,6 +52,6 @@ I had to do few tricks to use all these pins on the Arduino: Cf into comments in
 
 # Debugging
 
-Midi IO use Serial1 native serial port. In the final version, Serial0 on the usb port is not initialized, and the usb port is used only to power the card.
+Midi IO use Serial1 native serial port. Serial on the usb port is not initialized, bug can be enabled for debugging purpose.
 
 You can start the code in debug mode on the file you want, and debugs messages are sent to the usb serial port Serial0.
