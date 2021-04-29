@@ -1,43 +1,57 @@
 
-#include "defs.h"
 #include "midi.h"
+#include "menu.h"
+#include "kbd.h"
+#include "timer.h"
 #include "settings.h"
 
 //#define DEBUG_MODE
 
 MIDIExt midiExt;
 
-MIDIExt::MIDIExt() : MIDIExtInterface((midi::SerialMIDI<HardwareSerial>&)Serial3) {}
+midi::SerialMIDI<HardwareSerial> midiExtInterface(Serial3);
 
-void MIDIExt::begin() {
-  MIDIExtInterface::begin(MIDI_CHANNEL_OMNI);
+MIDIExt::MIDIExt() : midi::MidiInterface<midi::SerialMIDI<HardwareSerial>, midi::DefaultSettings>(midiExtInterface) {}
+
+void MIDIExt::setup() {
+  begin(MIDI_CHANNEL_OMNI);
   turnThruOff();
-  setHandleError(&errorReceived);
   setHandleNoteOn(&noteOnReceived);
   setHandleNoteOff(&noteOffReceived);
   setHandleControlChange(&controlChange);
+  setHandleClock(&clockReceived);
+  setHandleStart(&startReceived);
+#ifdef DEBUG_MODE
+  setHandleError(&errorReceived);
+  setHandleSongPosition(&songPositionReceived);
+  setHandleSongSelect(&songSelectReceived);
   setHandleProgramChange(&programChange);
   setHandleSystemExclusive(&systemExclusive);
   setHandleTimeCodeQuarterFrame(&timeCodeQuarterReceived);
-  setHandleSongPosition(&songPositionReceived);
-  setHandleSongSelect(&songSelectReceived);
   setHandleTuneRequest(&tuneRequestReceived);
-  setHandleClock(&clockReceived);
-  setHandleStart(&startReceived);
   setHandleTick(&tickReceived);
   setHandleContinue(&continueReceived);
   setHandleStop(&stopReceived);
   setHandleSystemReset(&systemResetReceived);
+#endif
+  updateTimePerClock();
+  lastClockSentAt = timer.now.now16;
+}
+
+// time units per beat in bpm
+void MIDIExt::updateTimePerClock() {
+  ticksPerMinutes  = settings.clock.ticksPerMinutes;
+  timePerClock = (1000000/TIME_MICROS_FACTOR) / (ticksPerMinutes*CLOCKS_PER_TICK/60);
 }
 
 uint16_t lastClockSend;
     
 void MIDIExt::checkLooperRestart() {
   if (settings.clock.loopTo > 0 && (settings.clock.pos >= settings.clock.loopTo || settings.clock.pos < settings.clock.loopFrom)) {
-    midiExt.sendStop();
+    sendStop();
     settings.clock.pos = settings.clock.loopFrom;
-    midiExt.sendSongPosition(settings.clock.pos/6);
-    midiExt.sendContinue();
+    sendSongPosition(settings.clock.pos/6);
+    sendContinue();
 /*#ifdef DEBUG_MODE
   Serial.print("Restart ");
   Serial.print(settings.clock.loopFrom);
@@ -49,84 +63,41 @@ void MIDIExt::checkLooperRestart() {
 
 
 void MIDIExt::scan() {
-  if (settings.clock.sender && now - lastClockSend >= timePerClock)  {
+  if (settings.clock.sender && timer.now.now16 - lastClockSentAt >= timePerClock)  {
+    if (ticksPerMinutes != settings.clock.ticksPerMinutes)
+      updateTimePerClock();
     // Sending clock
     settings.clock.pos += 1;
     if (settings.clock.pos % TICK_MEASURE_FACTOR == 0)
       checkLooperRestart();
-    lastClockSend = now;
-    midiExt.sendClock();
+    lastClockSentAt = timer.now.now16;
+    sendClock();
   } else {
-    midiExt.read();
+    read();
   }
 }
 
-void MIDIExt::errorReceived(int8_t err) {
+void MIDIExt::noteOnReceived(midi::Channel channel, byte note, byte) {
+    keyboard.keysStatus[channel][note - settings.transposeValue - FIRST_KEY] |= _KEY_PRESSED | (keyboard.sustainedChannel[channel] ? _KEY_SUSTAINED : 0) | _KEY_FLASHED;
 #ifdef DEBUG_MODE
-  Serial.print("Midi Error: ");
-  Serial.print(err);
-  Serial.println();
+  Serial.println("noteOnReceived");
 #endif
 }
-
-void MIDIExt::noteOnReceived(midi::Channel channel, byte note, byte velocity) {
-    keysStatus[channel][note - settings.transposeValue - FIRST_KEY] |= _KEY_PRESSED | (sustainedChannel[channel] ? _KEY_SUSTAINED : 0) | _KEY_FLASHED;
-}
-void MIDIExt::noteOffReceived(midi::Channel channel, byte note, byte velocity) {
-    keysStatus[channel][note - settings.transposeValue - FIRST_KEY] &= ~_KEY_PRESSED;
+void MIDIExt::noteOffReceived(midi::Channel channel, byte note, byte) {
+    keyboard.keysStatus[channel][note - settings.transposeValue - FIRST_KEY] &= ~_KEY_PRESSED;
 }
 
 void MIDIExt::controlChange(midi::Channel channel, byte control, byte value) {
   if (control == midi::Sustain)
-    sustainedChannel[channel] = value;
-}
-void MIDIExt::programChange(midi::Channel channel, byte a) {
-#ifdef DEBUG_MODE
-  Serial.print("SongSelect: ");
-  Serial.print(a);
-  Serial.println();
-#endif
-}
-void MIDIExt::systemExclusive(byte * array, unsigned size) {
-#ifdef DEBUG_MODE
-  Serial.print("SongSelect: ");
-  Serial.print(size);
-  Serial.println();
-#endif
-}
-
-void MIDIExt::timeCodeQuarterReceived(byte data) {
-#ifdef DEBUG_MODE
-  Serial.print("TimeCodeQuarter: ");
-  Serial.print(data);
-  Serial.println();
-#endif
-}
-
-void MIDIExt::songPositionReceived(unsigned beats) {
-  settings.clock.pos = (uint32_t)beats * 6;
-#ifdef DEBUG_MODE
-  Serial.print("SongPosition: ");
-  Serial.print(beats);
-  Serial.println();
-#endif
-}
-void MIDIExt::songSelectReceived(byte songnumber) {
-#ifdef DEBUG_MODE
-  Serial.print("SongSelect: ");
-  Serial.print(songnumber);
-  Serial.println();
-#endif
-}
-void MIDIExt::tuneRequestReceived() {
-#ifdef DEBUG_MODE
-  Serial.println("TuneRequest");
-#endif
+    keyboard.sustainedChannel[channel] = value;
 }
 
 void MIDIExt::clockReceived() {
   if ( ! settings.clock.sender)
     settings.clock.pos += 1;
+#ifdef DEBUG_MODE
+  Serial.print('.');
+#endif
 }
 void MIDIExt::startReceived() {
   settings.clock.pos = 0;
@@ -134,26 +105,55 @@ void MIDIExt::startReceived() {
   Serial.println("Start");
 #endif
 }
-void MIDIExt::tickReceived() {
+
 #ifdef DEBUG_MODE
+void MIDIExt::errorReceived(int8_t err) {
+  Serial.print("Midi Error: ");
+  Serial.print(err);
+  Serial.println();
+}
+void MIDIExt::songPositionReceived(unsigned beats) {
+  settings.clock.pos = (uint32_t)beats * 6;
+  Serial.print("SongPosition: ");
+  Serial.print(beats);
+  Serial.println();
+}
+void MIDIExt::songSelectReceived(byte songnumber) {
+  Serial.print("SongSelect: ");
+  Serial.print(songnumber);
+  Serial.println();
+}
+void MIDIExt::tuneRequestReceived() {
+  Serial.println("TuneRequest");
+}
+void MIDIExt::programChange(midi::Channel, byte a) {
+  Serial.print("SongSelect: ");
+  Serial.print(a);
+  Serial.println();
+}
+void MIDIExt::systemExclusive(byte *, unsigned size) {
+  Serial.print("SongSelect: ");
+  Serial.print(size);
+  Serial.println();
+}
+void MIDIExt::timeCodeQuarterReceived(byte data) {
+  Serial.print("TimeCodeQuarter: ");
+  Serial.print(data);
+  Serial.println();
+}
+void MIDIExt::tickReceived() {
   Serial.println("Tick");
-#endif
 }
 void MIDIExt::continueReceived() {
-#ifdef DEBUG_MODE
   Serial.println("Continue");
-#endif
 }
 void MIDIExt::stopReceived() {
-#ifdef DEBUG_MODE
   Serial.println("Stop");
-#endif
 }
 void MIDIExt::systemResetReceived() {
-#ifdef DEBUG_MODE
   Serial.println("SystemReset");
-#endif
 }
+#endif
 
 
 #undef DEBUG_MODE

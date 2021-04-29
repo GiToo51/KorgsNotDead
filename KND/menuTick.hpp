@@ -1,6 +1,7 @@
 
 const char* errorMessage = " # # ERROR  # #  # # ERROR  # # ";
 
+
 #define TTTB_DIV_IDX 4
 #define TTTB_MEAS_IDX 5
 
@@ -17,7 +18,7 @@ public:
     switch (menuIndex) {
       case TTTB_DIV_IDX:  return (settings.clock.pos / 3) % (CLOCKS_PER_TICK    /2) == 0 ? LED_COLOR(5, 6) : LED_OFF;
       case TTTB_MEAS_IDX: return (settings.clock.pos / 3) % (TICK_MEASURE_FACTOR/2) == 0 ? LED_COLOR(8, 6) : LED_OFF;
-      default: LED_OFF;
+      default: return LED_OFF;
     }    
   }
 private:
@@ -27,8 +28,8 @@ private:
 
 class TickSendModeButton : public Button {
 public:
-  uint8_t menuChar(uint8_t menuIndex, uint8_t index) { return (settings.clock.sender ? ">> Mode: Send   " : ">> Mode: Receive")[index]; }
-  uint8_t  color(uint8_t menuIndex) {
+  uint8_t menuChar(uint8_t, uint8_t index) { return (settings.clock.sender ? ">> Mode: Send   " : ">> Mode: Receive")[index]; }
+  uint8_t  color(uint8_t) {
     if (settings.clock.sender)
       return LED_COLOR(15, 6);
     else
@@ -47,8 +48,8 @@ public:
 };
 class TickSetLooperButton : public Button {
 public:
-  uint8_t menuChar(uint8_t menuIndex, uint8_t index) { return (">> Press to loop")[index]; }
-  uint8_t  color(uint8_t menuIndex) {
+  uint8_t menuChar(uint8_t, uint8_t index) { return (">> Press to loop")[index]; }
+  uint8_t  color(uint8_t) {
     if (settings.clock.loopFrom != settings.clock.loopTo)
       return LED_COLOR(2, 6);
     return LED_COLOR(2, 2);
@@ -71,8 +72,8 @@ public:
 };
 class TickResetLooperButton : public Button {
 public:
-  uint8_t menuChar(uint8_t menuIndex, uint8_t index) { return (">> Disable loop ")[index]; }
-  uint8_t  color(uint8_t menuIndex) {
+  uint8_t menuChar(uint8_t, uint8_t index) { return (">> Disable loop ")[index]; }
+  uint8_t  color(uint8_t) {
     if (settings.clock.loopTo > 0)
       return LED_COLOR(15, 3);
     return LED_OFF;
@@ -89,7 +90,7 @@ class TickMeasureSubmenu : public Menu {
 public:
   uint8_t menuCharL2(uint8_t index) { return (">> Time view")[index]; }
   uint8_t      size() { return TICK_MEASURE_COUNT + 4; }
-  void   onPress(uint8_t menuIndex, uint8_t velo) {
+  void   onPress(uint8_t menuIndex, uint8_t) {
     switch (menuIndex) {
       case 0:
         settings.clock.viewOffsetKeys -= settings.clock.viewOffsetKeys > TICK_MEASURE_COUNT ? TICK_MEASURE_COUNT/2 : settings.clock.viewOffsetKeys;
@@ -106,7 +107,7 @@ public:
     default:
       menuIndex += settings.clock.viewOffsetKeys - 2;
 
-      if (keyNbPressed <= 1) {
+      if (keyboard.keyNbPressed <= 1) {
         uint32_t diff = settings.clock.loopTo - settings.clock.loopFrom;
         if (diff == 0)
           diff = TICK_MEASURE_FACTOR;
@@ -161,7 +162,7 @@ public:
       case 1:
       case TICK_MEASURE_COUNT+3:
       case TICK_MEASURE_COUNT+4:
-        return keyNbPressed > 0 ? LED_COLOR(4, 1) : LED_OFF;
+        return keyboard.keyNbPressed > 0 ? LED_COLOR(4, 1) : LED_OFF;
     }
 
     menuIndex += settings.clock.viewOffsetKeys - 2;

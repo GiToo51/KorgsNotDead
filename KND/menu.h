@@ -1,19 +1,30 @@
+#pragma once
+
+#include "ui.h" // COLORS
+
+#define TICK_MEASURE_COUNT 32
+#define TICK_MEASURE_FACTOR (CLOCKS_PER_TICK*(1<<settings.clock.tickDivisor))
+#define TICK_MEASURES_MAX 0xFFFF
+#define TICK_MEASURE_ROUND(pos) (pos / TICK_MEASURE_FACTOR * TICK_MEASURE_FACTOR)
 
 // BASE MENU & BUTTON
 class Menu;
 class Button {
 public:
-  virtual uint8_t    color(uint8_t menuIndex) { return LED_OFF; }
+  virtual uint8_t    color(uint8_t) { return LED_OFF; }
   virtual Menu*    subMenu() { return NULL; }
-  virtual void     onPress(uint8_t menuIndex, uint8_t velo) { }
-  virtual void   onRelease(uint8_t menuIndex, uint8_t velo) { }
-  virtual uint8_t menuChar(uint8_t menuIndex, uint8_t index);
+  virtual void     onPress(uint8_t, uint8_t) { }
+  virtual void   onRelease(uint8_t, uint8_t) { }
+  virtual uint8_t menuChar(uint8_t, uint8_t);
 };
 extern Button nullButton;
 
 class Menu {
+protected:
+  int8_t _active;
 public:
-  static Menu* mainMenu();
+  static void resetMenu();
+  static Menu* firstMenu;
   static uint8_t page;
 
   Menu() { _active = -1; }
@@ -30,11 +41,8 @@ public:
   virtual void     onRelease(uint8_t index, uint8_t velo) { if (buttons()) buttons()[index]->onRelease(index, velo); _active = -1;    page = 0; }
   virtual uint8_t      color(uint8_t index)               { if (buttons()) return buttons()[index]->color(index); else return LED_OFF; }
   virtual uint8_t   altColor(uint8_t index);
-protected:
-  int8_t _active;
 };
 
-extern Menu* firstMenu;
 
 class WColoredMenu : public Menu {
 public:

@@ -1,18 +1,26 @@
+#pragma once
 
 // MIDI port
 #include <MIDI.h>
 
-typedef midi::MidiInterface<midi::SerialMIDI<HardwareSerial>, midi::DefaultSettings> MIDIExtInterface;
+#define CLOCKS_PER_TICK 24
 
-class MIDIExt : public MIDIExtInterface {
+class MIDIExt : public midi::MidiInterface<midi::SerialMIDI<HardwareSerial>, midi::DefaultSettings> {
 
 public:
   MIDIExt();
-  void begin();
+  void setup();
   void scan();
 
+  uint16_t lastClockSentAt;
+
 private:
+  uint16_t ticksPerMinutes; // copy from settings.clock.ticksPerMinutes for change detection
+  void updateTimePerClock();
+  uint16_t timePerClock; // time between 2 send Clock
+
   void checkLooperRestart();
+
   static void errorReceived(int8_t err);
   static void noteOnReceived(midi::Channel channel, byte note, byte velocity);
   static void noteOffReceived(midi::Channel channel, byte note, byte velocity);

@@ -1,3 +1,6 @@
+#pragma once
+
+#include <Arduino.h>
 
 typedef struct {
   uint8_t id; // 0-15
@@ -47,11 +50,10 @@ typedef struct {
 class Settings : public Settings_struct {
 
 public:
-  void reset();
+  void setup();
 
 private:
   void resetScale(byte i);
-  void updateTimePerClock();
 };
 
 extern Settings settings;

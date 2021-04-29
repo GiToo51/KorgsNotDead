@@ -1,7 +1,17 @@
 
-#include "defs.h"
 #include "ui.h"
+#include "timer.h"
 #include "menu.h"
+
+/*
+ * ASCII: 00-1F
+ *        00: (A)
+ *     01-08: _ 8x levels
+ *     09-0F:
+ *   
+ * ASCII: 80-9F
+ *     10-17: 8x notes: 10:/1 11:/2 12:/4 13:/8 14:/16 15:/32 16:/64 17:/128
+ */
 
 
 const char* lcdBarLevel18Top    = "\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\x01\x02\x03\x04\x05\x06\x07\x08\xFF\xFF\xFF";
@@ -10,13 +20,9 @@ const char* lcdBarLevel18Bottom = "\xA0\x01\x02\x03\x04\x05\x06\x07\x08\xFF\xFF\
 const char* lcdDefaultString = "\x10  \x11  \x12  \x13  \x14  \x15K\x10rg 's N\x10t De\0d";
 const char* lcdBootString = "! DON'T  PANIC !    booting...  ";
 
-uint8_t lcdMode;
-uint8_t lcdVelocityPos;
-uint8_t lcdDebugVelocity[LCD_DEBUG_VELOCITY_SIZE];
-
-uint8_t lcdDebug(uint8_t b) {
-  uint8_t idx = b%16/2;
-  switch (b) {
+uint8_t UI::lcdDebug() {
+  uint8_t idx = writePos%16/2;
+  switch (writePos) {
     case  0: case 16:
     case  2: case 18:
     case  4: case 20:
@@ -25,60 +31,57 @@ uint8_t lcdDebug(uint8_t b) {
     case 10: case 26:
     case 12: case 28:
     case 14: case 30:
-      return speedMainStrings[b%16/2][b/16];
+      return timer.cycleStrings[writePos%16/2][writePos/16];
 
     case  1: case  3: case  5: case  7: case  9: case 11: case 13:
-      return lcdBarLevel18Top[   speedMainDuration[idx]];
+      return lcdBarLevel18Top[   timer.cycleDuration[idx]];
     case 17: case 19: case 21: case 23: case 25: case 27: case 29:
-      return lcdBarLevel18Bottom[speedMainDuration[idx]];
+      return lcdBarLevel18Bottom[timer.cycleDuration[idx]];
 
     case 15:
-      return '0' + speedMainDuration[SPEED_FPS_ID]/10;
+      return '0' + timer.cycleDuration[SPEED_FPS_ID]/10;
     case 31:
-      return '0' + speedMainDuration[SPEED_FPS_ID]%10;
+      return '0' + timer.cycleDuration[SPEED_FPS_ID]%10;
     default:
       return ' ';
   }
 }
 
-uint8_t lcdDefault(uint8_t b) {
-  return lcdDefaultString[b];
+uint8_t UI::lcdDefault() {
+  return lcdDefaultString[writePos];
 }
 
-uint8_t lcdBoot(uint8_t b) {
-  return lcdBootString[b];
+uint8_t UI::lcdBoot() {
+  return lcdBootString[writePos];
 }
 
-uint8_t lcdMenu(uint8_t b) {
-/*  Menu* menu = firstMenu;
-  while (menu->nextMenu())
-    menu = menu->nextMenu();*/
-  if (b < 16)
-    return firstMenu->menuCharL1(b);
+uint8_t UI::lcdMenu() {
+  if (writePos < 16)
+    return Menu::firstMenu->menuCharL1(writePos);
   else
-    return firstMenu->menuCharL2(b-16);
+    return Menu::firstMenu->menuCharL2(writePos-16);
 }
 
-uint8_t lcdVelocity(uint8_t b) {
-  switch (b) {
+uint8_t UI::lcdVelocity() {
+  switch (writePos) {
     case  0: case  1: case  2: case  3:
     case  4: case  5: case  6: case  7:
     case  8: case  9: case 10: case 11:
     case 12: case 13:
-      return lcdBarLevel18Top[(lcdDebugVelocity[b]+7)/8];
+      return lcdBarLevel18Top[(lcdDebugVelocity[writePos]+7)/8];
 
     case 16: case 17: case 18: case 19:
     case 20: case 21: case 22: case 23:
     case 24: case 25: case 26: case 27:
     case 28: case 29:
-      return lcdBarLevel18Bottom[(lcdDebugVelocity[b-16]+7)/8];
+      return lcdBarLevel18Bottom[(lcdDebugVelocity[writePos-16]+7)/8];
 
     // Avg
-    case 14: return speedMainDuration[SPEED_AVERAGE_ID] > 9 ? '0' + (speedMainDuration[SPEED_AVERAGE_ID]/10 %10) : 0xF2;
-    case 15: return '0' + (speedMainDuration[SPEED_AVERAGE_ID]%10);
+    case 14: return timer.cycleDuration[SPEED_AVERAGE_ID] > 9 ? '0' + (timer.cycleDuration[SPEED_AVERAGE_ID]/10 %10) : 0xF2;
+    case 15: return '0' + (timer.cycleDuration[SPEED_AVERAGE_ID]%10);
     // Fps
-    case 30: return '0' + (speedMainDuration[SPEED_FPS_ID]/10 %10);
-    case 31: return '0' + (speedMainDuration[SPEED_FPS_ID]    %10);
+    case 30: return '0' + (timer.cycleDuration[SPEED_FPS_ID]/10 %10);
+    case 31: return '0' + (timer.cycleDuration[SPEED_FPS_ID]    %10);
     default: return ' ';
   }
 }
@@ -132,12 +135,5 @@ const char* scaleStrings[15] = {
     Ré Majeur : Si mineur --> 2 #
     Sol Majeur : Mi mineur --> 1 #
 */
-const computeByte_f lcdComputeByte[LCD_MODE_COUNT] = {
-  lcdDefault,
-  lcdBoot,
-  lcdMenu,
-  lcdVelocity,
-  lcdDebug,
-};
 
 #undef DEBUG_MODE
